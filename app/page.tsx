@@ -114,18 +114,26 @@ export default function Home() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((item) => (
               <div key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                {/* use <img> to avoid Next/Image config for remote domains */}
+                {/* use <img> for simplicity; add fallback so an image always shows */}
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="h-40 w-full object-cover rounded-xl mb-3"
+                  className="h-40 w-full object-cover rounded-xl mb-3 bg-white/10"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      'https://placehold.co/640x480?text=Gift+Idea';
+                  }}
                 />
                 <h3 className="font-semibold">{item.title}</h3>
                 <p className="text-sm text-white/70 mt-1">{item.reason}</p>
                 <div className="mt-3 flex items-center gap-2">
                   {item.prime && <span className="text-xs rounded bg-white/10 px-2 py-1">Prime</span>}
                   {item.priceBand && (
-                    <span className="text-xs rounded bg-white/10 px-2 py-1">{item.priceBand.replace('_', ' ')}</span>
+                    <span className="text-xs rounded bg-white/10 px-2 py-1">
+                      {item.priceBand.replace('_', ' ')}
+                    </span>
                   )}
                 </div>
                 <a
@@ -148,4 +156,5 @@ export default function Home() {
     </main>
   );
 }
+
 
