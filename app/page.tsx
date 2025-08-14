@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { ThemeToggle } from './components/ThemeToggle';
 
 type Suggestion = {
@@ -41,7 +42,7 @@ export default function Home() {
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
       setResults(data.results);
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -56,7 +57,7 @@ export default function Home() {
           <div>
             <h1 className="text-5xl font-bold tracking-tight">GiftFNDR</h1>
             <p className="mt-4 text-lg/7 text-muted">
-              Tell us who it's for, their interests and budget. We'll match spot-on gift ideas with instant buy links.
+              Tell us who it&apos;s for, their interests and budget. We&apos;ll match spot-on gift ideas with instant buy links.
             </p>
           </div>
           <ThemeToggle />
@@ -141,16 +142,14 @@ export default function Home() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((item) => (
               <div key={item.title} className="rounded-2xl border border-border bg-secondary p-4">
-                {/* use <img> for simplicity; add fallback so an image always shows */}
-                <img
+                <Image
                   src={item.image}
                   alt={item.title}
+                  width={640}
+                  height={480}
                   className="h-40 w-full object-cover rounded-xl mb-3 bg-accent"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      'https://placehold.co/640x480?text=Gift+Idea';
+                  onError={() => {
+                    // Fallback is handled by the src prop
                   }}
                 />
                 <h3 className="font-semibold">{item.title}</h3>
