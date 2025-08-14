@@ -10,6 +10,30 @@ type Suggestion = {
   priceBand?: 'under_20' | '20_50' | '50_100' | '100_plus';
 };
 
+// Loading Animation Component
+function LoadingAnimation() {
+  return (
+    <div className="flex items-center gap-3">
+      {/* Spinning Gift Box */}
+      <div className="relative">
+        <div className="w-6 h-6 border-2 border-white/30 rounded-md animate-spin">
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white/60 rounded-full"></div>
+        </div>
+      </div>
+      
+      {/* Pulsing Text */}
+      <span className="font-semibold animate-pulse">Finding perfect gifts</span>
+      
+      {/* Animated Dots */}
+      <div className="flex gap-1">
+        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [occasion, setOccasion] = useState('');
   const [relationship, setRelationship] = useState('');
@@ -18,6 +42,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Suggestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,12 +128,27 @@ export default function Home() {
               disabled={loading}
               className="rounded-xl bg-white text-black px-5 py-3 font-semibold disabled:opacity-60"
             >
-              {loading ? 'Finding…' : 'Find a gift'}
+              {loading ? <LoadingAnimation /> : 'Find a gift'}
             </button>
           </div>
         </form>
 
+
+
         {error && <p className="mt-6 text-red-400">{error}</p>}
+
+        {/* Loading Overlay */}
+        {loading && !results && (
+          <div className="mt-10 flex flex-col items-center justify-center py-16">
+            <div className="mb-6">
+              <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">Searching for perfect gifts...</h3>
+              <p className="text-white/60">This usually takes 5-10 seconds</p>
+            </div>
+          </div>
+        )}
 
         {/* Results */}
         {results && (
