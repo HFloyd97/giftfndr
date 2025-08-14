@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { ThemeToggle } from './components/ThemeToggle';
 
 type Suggestion = {
   title: string;
@@ -13,24 +14,7 @@ type Suggestion = {
 // Loading Animation Component
 function LoadingAnimation() {
   return (
-    <div className="flex items-center gap-3">
-      {/* Spinning Gift Box */}
-      <div className="relative">
-        <div className="w-6 h-6 border-2 border-white/30 rounded-md animate-spin">
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white/60 rounded-full"></div>
-        </div>
-      </div>
-      
-      {/* Pulsing Text */}
-      <span className="font-semibold animate-pulse">Finding perfect gifts</span>
-      
-      {/* Animated Dots */}
-      <div className="flex gap-1">
-        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-        <div className="w-2 h-2 bg-white/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-      </div>
-    </div>
+    <span className="font-semibold">Finding perfect gifts...</span>
   );
 }
 
@@ -42,8 +26,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Suggestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,57 +49,63 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-background text-foreground">
       <div className="max-w-4xl mx-auto px-6 py-16">
-        <h1 className="text-5xl font-bold tracking-tight">GiftFNDR</h1>
-        <p className="mt-4 text-lg/7 text-white/80">
-          Tell us who it’s for, their interests and budget. We’ll match spot-on gift ideas with instant buy links.
-        </p>
+        {/* Header with Theme Toggle */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-5xl font-bold tracking-tight">GiftFNDR</h1>
+            <p className="mt-4 text-lg/7 text-muted">
+              Tell us who it's for, their interests and budget. We'll match spot-on gift ideas with instant buy links.
+            </p>
+          </div>
+          <ThemeToggle />
+        </div>
 
         {/* Form */}
-        <form onSubmit={onSubmit} className="mt-8 grid gap-4 sm:grid-cols-2">
+        <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-2">
-            <span className="text-sm text-white/70">Occasion</span>
+            <span className="text-sm text-secondary-foreground">Occasion</span>
             <input
               value={occasion}
               onChange={(e) => setOccasion(e.target.value)}
               placeholder="Birthday, Anniversary, Christmas…"
-              className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/30"
+              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
               required
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm text-white/70">Relationship</span>
+            <span className="text-sm text-secondary-foreground">Relationship</span>
             <input
               value={relationship}
               onChange={(e) => setRelationship(e.target.value)}
               placeholder="Mum, Partner, Friend, Boss…"
-              className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/30"
+              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
               required
             />
           </label>
 
           <label className="sm:col-span-2 flex flex-col gap-2">
-            <span className="text-sm text-white/70">Interests</span>
+            <span className="text-sm text-secondary-foreground">Interests</span>
             <input
               value={interests}
               onChange={(e) => setInterests(e.target.value)}
               placeholder="Gaming, gym, cooking, travel…"
-              className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/30"
+              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
               required
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm text-white/70">Budget (£)</span>
+            <span className="text-sm text-secondary-foreground">Budget (£)</span>
             <input
               type="number"
               min={5}
               max={1000}
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
-              className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/30"
+              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground"
               required
             />
           </label>
@@ -126,26 +114,24 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-white text-black px-5 py-3 font-semibold disabled:opacity-60"
+              className="rounded-xl bg-primary text-primary-foreground px-5 py-3 font-semibold disabled:opacity-60 hover:opacity-90 transition-opacity"
             >
               {loading ? <LoadingAnimation /> : 'Find a gift'}
             </button>
           </div>
         </form>
 
-
-
-        {error && <p className="mt-6 text-red-400">{error}</p>}
+        {error && <p className="mt-6 text-error">{error}</p>}
 
         {/* Loading Overlay */}
         {loading && !results && (
           <div className="mt-10 flex flex-col items-center justify-center py-16">
             <div className="mb-6">
-              <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+              <div className="w-16 h-16 border-4 border-border border-t-primary rounded-full animate-spin"></div>
             </div>
             <div className="text-center">
               <h3 className="text-xl font-semibold mb-2">Searching for perfect gifts...</h3>
-              <p className="text-white/60">This usually takes 5-10 seconds</p>
+              <p className="text-muted">This usually takes 5-10 seconds</p>
             </div>
           </div>
         )}
@@ -154,12 +140,12 @@ export default function Home() {
         {results && (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((item) => (
-              <div key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={item.title} className="rounded-2xl border border-border bg-secondary p-4">
                 {/* use <img> for simplicity; add fallback so an image always shows */}
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="h-40 w-full object-cover rounded-xl mb-3 bg-white/10"
+                  className="h-40 w-full object-cover rounded-xl mb-3 bg-accent"
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
@@ -168,11 +154,11 @@ export default function Home() {
                   }}
                 />
                 <h3 className="font-semibold">{item.title}</h3>
-                <p className="text-sm text-white/70 mt-1">{item.reason}</p>
+                <p className="text-sm text-muted mt-1">{item.reason}</p>
                 <div className="mt-3 flex items-center gap-2">
-                  {item.prime && <span className="text-xs rounded bg-white/10 px-2 py-1">Prime</span>}
+                  {item.prime && <span className="text-xs rounded bg-accent px-2 py-1">Prime</span>}
                   {item.priceBand && (
-                    <span className="text-xs rounded bg-white/10 px-2 py-1">
+                    <span className="text-xs rounded bg-accent px-2 py-1">
                       {item.priceBand.replace('_', ' ')}
                     </span>
                   )}
@@ -181,7 +167,7 @@ export default function Home() {
                   href={item.affiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-4 rounded-xl bg-white text-black px-4 py-2 font-semibold"
+                  className="inline-block mt-4 rounded-xl bg-primary text-primary-foreground px-4 py-2 font-semibold hover:opacity-90 transition-opacity"
                 >
                   Buy
                 </a>
@@ -190,7 +176,7 @@ export default function Home() {
           </div>
         )}
 
-        <p className="mt-12 text-xs text-white/60">
+        <p className="mt-12 text-xs text-muted">
           As an Amazon Associate, we earn from qualifying purchases.
         </p>
       </div>
