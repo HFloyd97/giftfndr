@@ -7,6 +7,7 @@
   --foreground: #ededed;
   --primary: #ffffff;
   --primary-foreground: #000000;
+  --primary-rgb: 255, 255, 255;
   --secondary: rgba(255, 255, 255, 0.05);
   --secondary-foreground: rgba(255, 255, 255, 0.7);
   --border: rgba(255, 255, 255, 0.1);
@@ -24,6 +25,7 @@
   --foreground: #171717;
   --primary: #000000;
   --primary-foreground: #ffffff;
+  --primary-rgb: 0, 0, 0;
   --secondary: rgba(0, 0, 0, 0.05);
   --secondary-foreground: rgba(0, 0, 0, 0.7);
   --border: rgba(0, 0, 0, 0.1);
@@ -41,6 +43,7 @@
   --foreground: #f8fafc;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
+  --primary-rgb: 59, 130, 246;
   --secondary: rgba(59, 130, 246, 0.1);
   --secondary-foreground: rgba(248, 250, 252, 0.8);
   --border: rgba(59, 130, 246, 0.2);
@@ -159,4 +162,67 @@ body {
 [data-theme="blue"] .theme-icon.dark,
 [data-theme="blue"] .theme-icon.light {
   opacity: 0;
+}
+
+/* Simple Card Animation Classes */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideInFromBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.slide-in-from-bottom-4 {
+  animation: slideInFromBottom 0.6s ease-out forwards;
+}
+
+/* Placeholder animation */
+@keyframes placeholderFade {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.placeholder-animate {
+  animation: placeholderFade 3s ease-in-out infinite;
+}
+
+/* Typewriter cursor animation */
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.typewriter-cursor {
+  animation: blink 1s infinite;
 }

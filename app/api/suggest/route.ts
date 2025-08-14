@@ -37,11 +37,12 @@ Interests: ${interests}
 Budget: £${budget}
 Country: UK
 
-Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords": string[] } ] }
-- 6 items max
+Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords": string[], "category": string } ] }
+- 9 items max
 - 'title' should be specific enough to search on Amazon
 - 'reason' <= 160 characters, persuasive, UK context
 - 'keywords' 3–6 terms to help pick an image/search
+- 'category' should be one of: "tech", "home", "fashion", "hobby", "wellness", "food", "books", "outdoor", "beauty"
 `;
 
   try {
@@ -69,9 +70,9 @@ Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords"
 
     const data = await resp.json();
     const content = data?.choices?.[0]?.message?.content || '{"ideas":[]}';
-    const parsed = JSON.parse(content) as { ideas?: Array<{ title: string; reason: string; keywords?: string[] }> };
+    const parsed = JSON.parse(content) as { ideas?: Array<{ title: string; reason: string; keywords?: string[]; category?: string }> };
 
-    const ideas = (parsed.ideas || []).slice(0, 6);
+    const ideas = (parsed.ideas || []).slice(0, 9);
     const results = ideas.map((i) => {
       const k = i.keywords?.[0] || i.title;
       return {
@@ -80,7 +81,8 @@ Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords"
         image: imgFor(k),
         affiliateUrl: amazonSearch(i.title),
         prime: true,
-        priceBand
+        priceBand,
+        category: i.category || 'general'
       };
     });
 
@@ -98,7 +100,8 @@ Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords"
         image: imgFor('water bottle'),
         affiliateUrl: amazonSearch('insulated stainless water bottle 750ml'),
         prime: true,
-        priceBand
+        priceBand,
+        category: 'outdoor'
       },
       {
         title: 'Scented Candle Set (3-Pack)',
@@ -106,7 +109,8 @@ Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords"
         image: imgFor('scented candles'),
         affiliateUrl: amazonSearch('scented candle set 3 pack'),
         prime: true,
-        priceBand
+        priceBand,
+        category: 'home'
       },
       {
         title: 'Wireless Earbuds with Charging Case',
@@ -114,7 +118,62 @@ Return STRICT JSON: { "ideas": [ { "title": string, "reason": string, "keywords"
         image: imgFor('wireless earbuds'),
         affiliateUrl: amazonSearch('wireless earbuds charging case'),
         prime: true,
-        priceBand
+        priceBand,
+        category: 'tech'
+      },
+      {
+        title: 'Personalized Photo Frame',
+        reason: `A thoughtful way to display memories — perfect for ${relationship}.`,
+        image: imgFor('photo frame'),
+        affiliateUrl: amazonSearch('personalized photo frame'),
+        prime: true,
+        priceBand,
+        category: 'home'
+      },
+      {
+        title: 'Gourmet Coffee Gift Set',
+        reason: `For the coffee lover in your life. Premium beans and accessories.`,
+        image: imgFor('coffee gift set'),
+        affiliateUrl: amazonSearch('gourmet coffee gift set'),
+        prime: true,
+        priceBand,
+        category: 'food'
+      },
+      {
+        title: 'Yoga Mat with Carrying Strap',
+        reason: `Perfect for wellness enthusiasts. Non-slip and portable.`,
+        image: imgFor('yoga mat'),
+        affiliateUrl: amazonSearch('yoga mat with carrying strap'),
+        prime: true,
+        priceBand,
+        category: 'wellness'
+      },
+      {
+        title: 'Wireless Phone Charger',
+        reason: `Modern convenience that everyone appreciates.`,
+        image: imgFor('wireless charger'),
+        affiliateUrl: amazonSearch('wireless phone charger'),
+        prime: true,
+        priceBand,
+        category: 'tech'
+      },
+      {
+        title: 'Cookbook Collection',
+        reason: `For the home chef. Inspiring recipes and beautiful photography.`,
+        image: imgFor('cookbook'),
+        affiliateUrl: amazonSearch('cookbook collection'),
+        prime: true,
+        priceBand,
+        category: 'books'
+      },
+      {
+        title: 'Skincare Gift Set',
+        reason: `Luxury skincare products for pampering and self-care.`,
+        image: imgFor('skincare set'),
+        affiliateUrl: amazonSearch('skincare gift set'),
+        prime: true,
+        priceBand,
+        category: 'beauty'
       }
     ];
     return NextResponse.json({ results: fallback });
