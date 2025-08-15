@@ -9,7 +9,7 @@ type Suggestion = {
   image: string;
   affiliateUrl: string;
   prime?: boolean;
-  priceBand?: 'under_20' | '20_50' | '50_100' | '100_plus';
+  estimatedPrice: number;
   category?: string;
 };
 
@@ -52,7 +52,10 @@ export default function Home() {
   const [interests, setInterests] = useState('');
   const [budget, setBudget] = useState<number>(50);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [results, setResults] = useState<Suggestion[] | null>(null);
+  const [allResults, setAllResults] = useState<Suggestion[]>([]);
+  const [displayedCount, setDisplayedCount] = useState(9);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -61,6 +64,7 @@ export default function Home() {
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [searchCache, setSearchCache] = useState<Record<string, Suggestion[]>>({});
 
   // Animated placeholder examples
   const placeholderExamples = [
@@ -70,6 +74,16 @@ export default function Home() {
     "Educational toy for my 8-year-old niece",
     "Luxury gift for my boss under £100",
     "Outdoor gear for my hiking enthusiast dad"
+  ];
+
+  // Popular quick searches for instant results
+  const popularSearches = [
+    { text: "Tech gifts", query: "tech gadgets" },
+    { text: "Romantic gifts", query: "romantic" },
+    { text: "Coffee lover", query: "coffee" },
+    { text: "Gaming", query: "gaming" },
+    { text: "Fitness", query: "fitness" },
+    { text: "Books", query: "books" }
   ];
 
   // Typewriter animation
@@ -115,9 +129,24 @@ export default function Home() {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
+    const cacheKey = `quick_${searchQuery.toLowerCase()}`;
+    
+    // Check cache first
+    if (searchCache[cacheKey]) {
+      setResults(searchCache[cacheKey]);
+      setAllResults(searchCache[cacheKey]);
+      setDisplayedCount(9);
+      setSortBy('default');
+      setSelectedCategory('all');
+      setResultsSearchQuery('');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setResults(null);
+    setAllResults([]);
+    setDisplayedCount(9);
     setSortBy('default');
     setSelectedCategory('all');
     setResultsSearchQuery('');
@@ -135,7 +164,12 @@ export default function Home() {
       });
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
-      setResults(data.results);
+      
+      // Cache the results
+      setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
+      
+      setAllResults(data.results);
+      setResults(data.results.slice(0, 9));
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -145,13 +179,31 @@ export default function Home() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    const cacheKey = `detailed_${occasion}_${relationship}_${interests}_${budget}`;
+    
+    // Check cache first
+    if (searchCache[cacheKey]) {
+      setResults(searchCache[cacheKey]);
+      setAllResults(searchCache[cacheKey]);
+      setDisplayedCount(9);
+      setSortBy('default');
+      setSelectedCategory('all');
+      setSearchQuery('');
+      setResultsSearchQuery('');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setResults(null);
+    setAllResults([]);
+    setDisplayedCount(9);
     setSortBy('default');
     setSelectedCategory('all');
     setSearchQuery('');
     setResultsSearchQuery('');
+    
     try {
       const res = await fetch('/api/suggest', {
         method: 'POST',
@@ -160,7 +212,97 @@ export default function Home() {
       });
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
-      setResults(data.results);
+      
+      // Cache the results
+      setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
+      
+      setAllResults(data.results);
+      setResults(data.results.slice(0, 9));
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMoreResults() {
+    if (loadingMore) return;
+    
+    setLoadingMore(true);
+    
+    try {
+      // Generate additional gifts on-demand
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          occasion: occasion || 'general', 
+          relationship: relationship || 'friend', 
+          interests: interests || searchQuery || 'gift', 
+          budget: budget || 50 
+        })
+      });
+      
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      
+      // Add new results to existing ones
+      const newResults = [...allResults, ...data.results];
+      setAllResults(newResults);
+      setResults(newResults);
+      setDisplayedCount(newResults.length);
+      
+    } catch (error) {
+      console.error('Failed to load more results:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function handlePopularSearch(query: string) {
+    setSearchQuery(query);
+    
+    const cacheKey = `quick_${query.toLowerCase()}`;
+    
+    // Check cache first
+    if (searchCache[cacheKey]) {
+      setResults(searchCache[cacheKey]);
+      setAllResults(searchCache[cacheKey]);
+      setDisplayedCount(9);
+      setSortBy('default');
+      setSelectedCategory('all');
+      setResultsSearchQuery('');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    setResults(null);
+    setAllResults([]);
+    setDisplayedCount(9);
+    setSortBy('default');
+    setSelectedCategory('all');
+    setResultsSearchQuery('');
+    
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          occasion: '', 
+          relationship: '', 
+          interests: query, 
+          budget: 100 
+        })
+      });
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      
+      // Cache the results
+      setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
+      
+      setAllResults(data.results);
+      setResults(data.results.slice(0, 9));
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -183,11 +325,9 @@ export default function Home() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'price-low':
-          return (a.priceBand === 'under_20' ? 0 : a.priceBand === '20_50' ? 1 : a.priceBand === '50_100' ? 2 : 3) -
-                 (b.priceBand === 'under_20' ? 0 : b.priceBand === '20_50' ? 1 : b.priceBand === '50_100' ? 2 : 3);
+          return a.estimatedPrice - b.estimatedPrice;
         case 'price-high':
-          return (b.priceBand === 'under_20' ? 0 : b.priceBand === '20_50' ? 1 : b.priceBand === '50_100' ? 2 : 3) -
-                 (a.priceBand === 'under_20' ? 0 : a.priceBand === '20_50' ? 1 : a.priceBand === '50_100' ? 2 : 3);
+          return b.estimatedPrice - a.estimatedPrice;
         case 'category':
           return (a.category || 'general').localeCompare(b.category || 'general');
         default:
@@ -215,26 +355,26 @@ export default function Home() {
 
         {/* Quick Search Box */}
         <div className="mb-12">
-          <form onSubmit={handleQuickSearch} className="relative max-w-3xl mx-auto">
+          <form onSubmit={handleQuickSearch} className="relative">
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={currentText + (isTyping ? '|' : '')}
-                className="w-full rounded-2xl bg-secondary/50 border border-border/50 px-8 py-5 pr-20 outline-none focus:border-primary/30 focus:bg-secondary text-foreground placeholder:text-muted/70 transition-all duration-500 ease-out focus:shadow-xl focus:shadow-primary/5 text-lg"
+                className="w-full rounded-2xl bg-secondary/50 border border-border/50 px-8 py-5 pr-16 outline-none focus:border-primary/40 focus:bg-secondary text-foreground placeholder:text-muted/70 text-lg search-glow"
                 disabled={loading}
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
                 <button
                   type="submit"
                   disabled={loading || !searchQuery.trim()}
-                  className="bg-primary text-primary-foreground rounded-xl px-6 py-3 font-semibold hover:bg-primary/90 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                  className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   )}
@@ -245,6 +385,23 @@ export default function Home() {
               Or fill out the detailed form below for more specific recommendations
             </p>
           </form>
+
+          {/* Popular Quick Searches */}
+          <div className="mt-6">
+            <p className="text-center text-sm text-muted/80 mb-3">Popular searches:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {popularSearches.map((search) => (
+                <button
+                  key={search.query}
+                  onClick={() => handlePopularSearch(search.query)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-full bg-secondary/50 border border-border/50 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {search.text}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Form */}
@@ -401,8 +558,10 @@ export default function Home() {
                       width={640}
                       height={480}
                       className="h-48 w-full object-cover transition-all duration-500 ease-out group-hover:scale-105 group-hover:brightness-105"
-                      onError={() => {
-                        // Fallback is handled by the src prop
+                      onError={(e) => {
+                        // Fallback to a reliable Picsum image when the original fails
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://picsum.photos/seed/gift/640/480';
                       }}
                     />
                     
@@ -410,16 +569,11 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
                     
                     {/* Price indicator */}
-                    {item.priceBand && (
-                      <div className="absolute top-3 right-3">
-                        <span className="text-xs rounded-full bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 font-semibold shadow-sm border border-border/50 transition-all duration-300 ease-out group-hover:scale-105 group-hover:bg-background/95">
-                          {item.priceBand === 'under_20' && 'Under £20'}
-                          {item.priceBand === '20_50' && '£20-£50'}
-                          {item.priceBand === '50_100' && '£50-£100'}
-                          {item.priceBand === '100_plus' && '£100+'}
-                        </span>
-                      </div>
-                    )}
+                    <div className="absolute top-3 right-3">
+                      <span className="text-xs rounded-full bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 font-semibold shadow-sm border border-border/50 transition-all duration-300 ease-out group-hover:scale-105 group-hover:bg-background/95">
+                        £{item.estimatedPrice}
+                      </span>
+                    </div>
                   </div>
                   
                   {/* Content */}
@@ -439,10 +593,10 @@ export default function Home() {
                       href={item.affiliateUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-3 font-semibold hover:from-primary/90 hover:to-primary/70 transition-all duration-300 ease-out text-sm shadow-sm hover:shadow-lg hover:scale-105"
+                      className="inline-flex items-center justify-center w-full rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground/80 hover:text-foreground border border-border/50 hover:border-border px-3 py-2 font-medium transition-all duration-300 ease-out text-xs hover:scale-[1.02]"
                     >
-                      Get This Gift
-                      <svg className="ml-2 w-4 h-4 transition-all duration-300 ease-out group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      Get This
+                      <svg className="ml-1.5 w-3 h-3 transition-all duration-300 ease-out group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
@@ -450,6 +604,40 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            {/* Load More Button */}
+            {results && results.length > 0 && (
+              <div className="flex justify-center mt-12">
+                <button
+                  onClick={loadMoreResults}
+                  disabled={loadingMore}
+                  className="inline-flex items-center justify-center px-8 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-out hover:scale-[1.02]"
+                >
+                  {loadingMore ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2"></div>
+                      Finding More Gifts...
+                    </>
+                  ) : (
+                    <>
+                      Find More Gifts
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Results Count */}
+            {allResults.length > 0 && (
+              <div className="text-center mt-8">
+                <p className="text-sm text-muted">
+                  Showing {displayedCount} of {allResults.length} gifts
+                </p>
+              </div>
+            )}
 
             {filteredAndSortedResults.length === 0 && (
               <div className="text-center py-12">

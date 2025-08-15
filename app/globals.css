@@ -226,3 +226,24 @@ body {
 .typewriter-cursor {
   animation: blink 1s infinite;
 }
+
+/* Very subtle animated glowing border */
+@keyframes verySubtleGlow {
+  0% {
+    box-shadow: 0 0 2px var(--primary);
+  }
+  50% {
+    box-shadow: 0 0 4px var(--primary);
+  }
+  100% {
+    box-shadow: 0 0 2px var(--primary);
+  }
+}
+
+.search-glow {
+  border: 1px solid var(--primary) !important;
+  border-radius: 1rem !important;
+  animation: verySubtleGlow 3s ease-in-out infinite !important;
+  position: relative;
+  z-index: 10;
+}
