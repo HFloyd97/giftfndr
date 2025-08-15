@@ -382,86 +382,135 @@ export default function Home() {
               </div>
             </div>
             <p className="mt-4 text-center text-sm text-muted/80">
-              Or fill out the detailed form below for more specific recommendations
+              Or explore categories and occasions below
             </p>
           </form>
 
-          {/* Popular Quick Searches */}
-          <div className="mt-6">
-            <p className="text-center text-sm text-muted/80 mb-3">Popular searches:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {popularSearches.map((search) => (
+          {/* Quick Search Options */}
+          <div className="mt-8 popular-searches-container">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-1">Quick Search</h3>
+              <p className="text-sm text-muted/70">Discover trending gift ideas</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              {popularSearches.map((search, index) => (
                 <button
                   key={search.query}
                   onClick={() => handlePopularSearch(search.query)}
                   disabled={loading}
-                  className="px-4 py-2 rounded-full bg-secondary/50 border border-border/50 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative px-5 py-3 rounded-xl bg-secondary/50 border border-border/50 text-sm text-foreground/90 hover:text-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden popular-search-button"
+                  style={{
+                    animationDelay: `${index * 150}ms`,
+                    animationFillMode: 'both'
+                  }}
                 >
-                  {search.text}
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                  
+                  {/* Content */}
+                  <span className="relative z-10 font-medium">{search.text}</span>
+                  
+                  {/* Subtle glow on hover */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               ))}
+            </div>
+
+            {/* Occasions */}
+            <div className="text-center">
+              <h4 className="text-base font-medium text-foreground mb-4">Occasions</h4>
+              <div className="flex flex-wrap justify-center gap-3">
+                {[
+                  { name: 'Birthday', query: 'birthday gift' },
+                  { name: 'Christmas', query: 'christmas gift' },
+                  { name: 'Anniversary', query: 'anniversary gift' },
+                  { name: 'Wedding', query: 'wedding gift' },
+                  { name: 'Graduation', query: 'graduation gift' },
+                  { name: 'Housewarming', query: 'housewarming gift' }
+                ].map((occasion, index) => (
+                  <button
+                    key={occasion.name}
+                    onClick={() => handlePopularSearch(occasion.query)}
+                    disabled={loading}
+                    className="group relative px-5 py-3 rounded-xl bg-secondary/50 border border-border/50 text-sm text-foreground/90 hover:text-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden popular-search-button"
+                    style={{
+                      animationDelay: `${(index + 6) * 150}ms`,
+                      animationFillMode: 'both'
+                    }}
+                  >
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                    
+                    {/* Content */}
+                    <span className="relative z-10 font-medium">{occasion.name}</span>
+                    
+                    {/* Subtle glow on hover */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm text-secondary-foreground">Occasion</span>
-            <input
-              value={occasion}
-              onChange={(e) => setOccasion(e.target.value)}
-              placeholder="Birthday, Anniversary, Christmas…"
-              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
-              required
-            />
-          </label>
+        {/* Quick Category Selection */}
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">What are you looking for?</h2>
+            <p className="text-muted/80">Choose categories that interest you</p>
+          </div>
+          
+          {/* Category Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { name: 'Tech & Gadgets', icon: '💻', query: 'tech gadgets' },
+              { name: 'Home & Living', icon: '🏠', query: 'home decor' },
+              { name: 'Fashion & Style', icon: '👗', query: 'fashion accessories' },
+              { name: 'Sports & Fitness', icon: '🏃‍♂️', query: 'fitness equipment' },
+              { name: 'Books & Learning', icon: '📚', query: 'books' },
+              { name: 'Beauty & Wellness', icon: '💄', query: 'beauty products' },
+              { name: 'Food & Drink', icon: '🍷', query: 'food drink' },
+              { name: 'Outdoor & Adventure', icon: '🏕️', query: 'outdoor gear' }
+            ].map((category) => (
+              <button
+                key={category.name}
+                onClick={() => handlePopularSearch(category.query)}
+                disabled={loading}
+                className="group relative p-6 rounded-2xl bg-secondary/30 border border-border/50 hover:border-primary/40 hover:bg-secondary/50 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="text-center">
+                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">{category.icon}</div>
+                  <div className="text-sm font-medium text-foreground/90 group-hover:text-foreground">{category.name}</div>
+                </div>
+              </button>
+            ))}
+          </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm text-secondary-foreground">Relationship</span>
+          {/* Budget Slider */}
+          <div className="max-w-md mx-auto mb-8">
+            <label className="block text-sm font-medium text-foreground mb-4 text-center">
+              Budget: £{budget}
+            </label>
             <input
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value)}
-              placeholder="Mum, Partner, Friend, Boss…"
-              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
-              required
-            />
-          </label>
-
-          <label className="sm:col-span-2 flex flex-col gap-2">
-            <span className="text-sm text-secondary-foreground">Interests</span>
-            <input
-              value={interests}
-              onChange={(e) => setInterests(e.target.value)}
-              placeholder="Gaming, gym, cooking, travel…"
-              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground placeholder:text-muted"
-              required
-            />
-          </label>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-sm text-secondary-foreground">Budget (£)</span>
-            <input
-              type="number"
-              min={5}
-              max={1000}
+              type="range"
+              min="10"
+              max="200"
+              step="10"
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
-              className="rounded-xl bg-secondary border border-border px-4 py-3 outline-none focus:border-border-hover text-foreground"
-              required
-            />
-          </label>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
+              className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer slider"
               disabled={loading}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-3 font-semibold disabled:opacity-60 hover:opacity-90 transition-opacity"
-            >
-              {loading ? <LoadingAnimation /> : 'Find a gift'}
-            </button>
+            />
+            <div className="flex justify-between text-xs text-muted/70 mt-2">
+              <span>£10</span>
+              <span>£200</span>
+            </div>
           </div>
-        </form>
+
+
+
+
+        </div>
 
         {error && <p className="mt-6 text-error">{error}</p>}
 
