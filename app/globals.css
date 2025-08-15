@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Smooth scrolling for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Theme Variables */
 :root {
   /* Dark Theme (Default) */

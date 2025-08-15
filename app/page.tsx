@@ -15,15 +15,26 @@ type Suggestion = {
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'category';
 
-// Loading Animation Component
-function LoadingAnimation() {
-  return (
-    <span className="font-semibold">Finding perfect gifts...</span>
-  );
-}
+       // Enhanced Loading Animation Component
+       function LoadingAnimation() {
+         return (
+           <div className="flex flex-col items-center space-y-4">
+             <div className="relative">
+               <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+               <div className="absolute inset-0 w-8 h-8 border-2 border-transparent border-t-primary/60 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+             </div>
+             <div className="text-center">
+               <p className="font-semibold text-foreground">Finding perfect gifts...</p>
+               <p className="text-sm text-muted/70 mt-1">This usually takes 10-15 seconds</p>
+             </div>
+           </div>
+         );
+       }
 
-// Category Badge Component
-function CategoryBadge({ category }: { category: string }) {
+
+
+       // Category Badge Component
+       function CategoryBadge({ category }: { category: string }) {
   const categoryConfig = {
     tech: { text: 'text-blue-400' },
     home: { text: 'text-emerald-400' },
@@ -64,9 +75,10 @@ export default function Home() {
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
-  const [searchCache, setSearchCache] = useState<Record<string, Suggestion[]>>({});
+           const [searchCache, setSearchCache] = useState<Record<string, Suggestion[]>>({});
+         const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-  // Animated placeholder examples
+         // Animated placeholder examples
   const placeholderExamples = [
     "Gift for my tech-savvy brother who loves gaming",
     "Something romantic for my wife's anniversary",
@@ -123,9 +135,69 @@ export default function Home() {
       
       deleteNextChar();
     }
-  }, [currentPlaceholderIndex, isTyping]);
+           }, [currentPlaceholderIndex, isTyping]);
 
-  async function handleQuickSearch(e: React.FormEvent) {
+         // Debounced search effect
+         useEffect(() => {
+           const timer = setTimeout(() => {
+             setDebouncedSearchQuery(searchQuery);
+           }, 300);
+
+           return () => clearTimeout(timer);
+         }, [searchQuery]);
+
+         async function handleSearchButtonClick() {
+           if (!searchQuery.trim()) return;
+           
+           const cacheKey = `quick_${searchQuery.toLowerCase()}`;
+           
+           // Check cache first
+           if (searchCache[cacheKey]) {
+             setResults(searchCache[cacheKey]);
+             setAllResults(searchCache[cacheKey]);
+             setDisplayedCount(9);
+             setSortBy('default');
+             setSelectedCategory('all');
+             setResultsSearchQuery('');
+             return;
+           }
+           
+           setLoading(true);
+           setError(null);
+           setResults(null);
+           setAllResults([]);
+           setDisplayedCount(9);
+           setSortBy('default');
+           setSelectedCategory('all');
+           setResultsSearchQuery('');
+           
+           try {
+             const res = await fetch('/api/suggest', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ 
+                 occasion: '', 
+                 relationship: '', 
+                 interests: searchQuery, 
+                 budget: 100 
+               })
+             });
+             if (!res.ok) throw new Error('Request failed');
+             const data = await res.json();
+             
+             // Cache the results
+             setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
+             
+             setAllResults(data.results);
+             setResults(data.results.slice(0, 9));
+           } catch {
+             setError('Something went wrong. Please try again.');
+           } finally {
+             setLoading(false);
+           }
+         }
+
+         async function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
@@ -259,7 +331,9 @@ export default function Home() {
     }
   }
 
-  async function handlePopularSearch(query: string) {
+  
+
+         async function handlePopularSearch(query: string) {
     setSearchQuery(query);
     
     const cacheKey = `quick_${query.toLowerCase()}`;
@@ -362,14 +436,14 @@ export default function Home() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={currentText + (isTyping ? '|' : '')}
-                className="w-full rounded-2xl bg-secondary/50 border border-border/50 px-8 py-5 pr-16 outline-none focus:border-primary/40 focus:bg-secondary text-foreground placeholder:text-muted/70 text-lg search-glow"
+                className="w-full rounded-2xl bg-secondary/50 border border-border/50 px-8 py-5 pr-16 outline-none focus:border-primary/40 focus:bg-secondary text-foreground placeholder:text-muted/70 text-lg"
                 disabled={loading}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
                 <button
                   type="submit"
                   disabled={loading || !searchQuery.trim()}
-                  className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-primary text-primary-foreground rounded-xl px-4 py-2.5 font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer relative z-20"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
@@ -591,61 +665,87 @@ export default function Home() {
               {filteredAndSortedResults.map((item, index) => (
                 <div 
                   key={item.title} 
-                  className="group relative overflow-hidden rounded-2xl border border-border bg-secondary hover:border-border-hover transition-all duration-500 ease-out hover:shadow-lg hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
+                  className="group relative overflow-hidden rounded-2xl border border-border/30 bg-secondary/50 hover:border-primary/40 hover:bg-secondary/70 transition-all duration-600 ease-out hover:shadow-xl hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
                   style={{
                     animationDelay: `${index * 100}ms`,
                     animationFillMode: 'both'
                   }}
                 >
-                  {/* Subtle glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out"></div>
-                  {/* Image Container */}
+                  {/* Single elegant glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-all duration-600 ease-out"></div>
+                  
+                  {/* Enhanced Image Container with Loading States */}
                   <div className="relative overflow-hidden">
+                    {/* Skeleton Loading State */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-secondary/50 via-secondary/30 to-secondary/50 animate-pulse">
+                      <div className="h-full w-full bg-gradient-to-br from-border/20 via-transparent to-border/20"></div>
+                    </div>
+                    
+                    {/* Actual Image with Loading States */}
                     <Image
                       src={item.image}
                       alt={item.title}
                       width={640}
                       height={480}
-                      className="h-48 w-full object-cover transition-all duration-500 ease-out group-hover:scale-105 group-hover:brightness-105"
-                      onError={(e) => {
-                        // Fallback to a reliable Picsum image when the original fails
+                      className="h-48 w-full object-cover transition-all duration-600 ease-out group-hover:scale-105 group-hover:brightness-105 relative z-10"
+                      onLoad={(e) => {
+                        // Hide skeleton when image loads
                         const target = e.target as HTMLImageElement;
-                        target.src = 'https://picsum.photos/seed/gift/640/480';
+                        target.style.opacity = '1';
+                        const skeleton = target.parentElement?.querySelector('.animate-pulse') as HTMLElement;
+                        if (skeleton) {
+                          skeleton.style.opacity = '0';
+                          setTimeout(() => skeleton.style.display = 'none', 300);
+                        }
                       }}
+                      onError={(e) => {
+                        // Enhanced fallback with loading state
+                        const target = e.target as HTMLImageElement;
+                        target.style.opacity = '0';
+                        
+                        // Show error state briefly, then load fallback
+                        setTimeout(() => {
+                          target.src = 'https://picsum.photos/seed/gift/640/480';
+                          target.style.opacity = '1';
+                        }, 200);
+                      }}
+                      style={{ opacity: 0 }}
                     />
                     
-                    {/* Simple shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
+                    {/* Single elegant shine */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1200 ease-out z-20"></div>
                     
-                    {/* Price indicator */}
-                    <div className="absolute top-3 right-3">
-                      <span className="text-xs rounded-full bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 font-semibold shadow-sm border border-border/50 transition-all duration-300 ease-out group-hover:scale-105 group-hover:bg-background/95">
-                        £{item.estimatedPrice}
-                      </span>
-                    </div>
+                                         {/* Clean price indicator */}
+                     <div className="absolute top-3 right-3 z-30">
+                       <span className="text-xs rounded-full bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 font-semibold shadow-sm border border-border/40 transition-all duration-400 ease-out group-hover:scale-105 group-hover:bg-primary/15 group-hover:text-primary">
+                         £{item.estimatedPrice}
+                       </span>
+                     </div>
+                     
+
                   </div>
                   
-                  {/* Content */}
-                  <div className="p-5 transition-all duration-300 ease-out group-hover:bg-secondary/60 relative">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-base line-clamp-2 flex-1 transition-all duration-300 ease-out group-hover:text-foreground">{item.title}</h3>
+                  {/* Clean Content */}
+                  <div className="p-5 transition-all duration-400 ease-out group-hover:bg-secondary/60 relative">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-base line-clamp-2 flex-1 transition-all duration-400 ease-out group-hover:text-foreground leading-tight">{item.title}</h3>
                       {item.category && (
-                        <div className="ml-3 flex-shrink-0 transition-all duration-300 ease-out group-hover:scale-105">
+                        <div className="ml-3 flex-shrink-0 transition-all duration-400 ease-out group-hover:scale-105">
                           <CategoryBadge category={item.category} />
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted mb-4 line-clamp-2 transition-all duration-300 ease-out group-hover:text-muted/90">{item.reason}</p>
+                    <p className="text-sm text-muted/70 mb-4 line-clamp-2 transition-all duration-400 ease-out group-hover:text-muted">{item.reason}</p>
                     
-                    {/* Buy Button */}
-                    <a
-                      href={item.affiliateUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-full rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground/80 hover:text-foreground border border-border/50 hover:border-border px-3 py-2 font-medium transition-all duration-300 ease-out text-xs hover:scale-[1.02]"
-                    >
-                      Get This
-                      <svg className="ml-1.5 w-3 h-3 transition-all duration-300 ease-out group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {/* Clean CTA Button */}
+                                         <a
+                       href={item.affiliateUrl}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="inline-flex items-center justify-center w-full rounded-lg bg-foreground/5 hover:bg-primary/10 active:bg-primary/20 text-foreground/80 hover:text-primary active:text-primary border border-border/40 hover:border-primary/40 active:border-primary/60 px-4 py-3 font-medium transition-all duration-200 ease-out text-sm hover:scale-[1.01] active:scale-[0.98] touch-manipulation"
+                     >
+                      <span>View Gift</span>
+                      <svg className="ml-2 w-4 h-4 transition-all duration-400 ease-out group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
@@ -702,12 +802,14 @@ export default function Home() {
           </div>
         )}
 
-        <p className="mt-12 text-xs text-muted">
-          As an Amazon Associate, we earn from qualifying purchases.
-        </p>
-      </div>
-    </main>
-  );
-}
+                       <p className="mt-12 text-xs text-muted">
+                 As an Amazon Associate, we earn from qualifying purchases.
+               </p>
+             </div>
+             
+
+           </main>
+         );
+       }
 
 
