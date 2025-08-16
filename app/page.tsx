@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { ThemeToggle } from './components/ThemeToggle';
+import { trackEvent } from './utils/analytics';
 
 type Suggestion = {
   title: string;
@@ -288,6 +289,9 @@ export default function Home() {
          };
 
          const handleSuggestionClick = (suggestion: string) => {
+           // Track suggestion click
+           trackEvent.search(suggestion, 'suggestion');
+           
            setSearchQuery(suggestion);
            setShowSuggestions(false);
            addToRecentSearches(suggestion);
@@ -390,6 +394,9 @@ export default function Home() {
          async function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    
+    // Track search event
+    trackEvent.search(searchQuery, 'quick');
     
     const cacheKey = `quick_${searchQuery.toLowerCase()}`;
     
@@ -506,6 +513,9 @@ export default function Home() {
   async function loadMoreResults() {
     if (loadingMore) return;
     
+    // Track load more event
+    trackEvent.loadMore(allResults.length, allResults.length + 9);
+    
     setLoadingMore(true);
     
     try {
@@ -532,6 +542,7 @@ export default function Home() {
       
     } catch (error) {
       console.error('Failed to load more results:', error);
+      trackEvent.error('Failed to load more results', 'load_more');
     } finally {
       setLoadingMore(false);
     }
@@ -540,6 +551,9 @@ export default function Home() {
   
 
          async function handlePopularSearch(query: string) {
+    // Track popular search event
+    trackEvent.search(query, 'popular');
+    
     setSearchQuery(query);
     
     const cacheKey = `quick_${query.toLowerCase()}`;
@@ -1065,6 +1079,7 @@ export default function Home() {
                        href={item.affiliateUrl}
                        target="_blank"
                        rel="noopener noreferrer"
+                       onClick={() => trackEvent.giftClick(item.title, item.category || 'general', item.estimatedPrice)}
                        className="inline-flex items-center justify-center w-full rounded-lg bg-foreground/5 hover:bg-primary/10 active:bg-primary/20 text-foreground/80 hover:text-primary active:text-primary border border-border/40 hover:border-primary/40 active:border-primary/60 px-4 py-3 font-medium transition-all duration-200 ease-out text-sm hover:scale-[1.01] active:scale-[0.98] touch-manipulation"
                      >
                       <span>View Gift</span>
