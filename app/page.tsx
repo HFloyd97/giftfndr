@@ -1376,17 +1376,9 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Found perfect gifts for "${searchQuery}" with AI! Check out these recommendations:`;
                       
-                      // Direct X (Twitter) sharing
+                      // Direct X (Twitter) sharing - simple approach
                       const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=gifts,AI,recommendations`;
-                      
-                      // Try to open in app first, then fallback to web
-                      const link = document.createElement('a');
-                      link.href = xUrl;
-                      link.target = '_blank';
-                      link.rel = 'noopener noreferrer';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      window.location.href = xUrl;
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
@@ -1419,17 +1411,9 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Just discovered amazing gift ideas for "${searchQuery}" using GiftFNDR's AI recommendations!`;
                       
-                      // Direct Facebook sharing
+                      // Direct Facebook sharing - simple approach
                       const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
-                      
-                      // Try to open in app first, then fallback to web
-                      const link = document.createElement('a');
-                      link.href = fbUrl;
-                      link.target = '_blank';
-                      link.rel = 'noopener noreferrer';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      window.location.href = fbUrl;
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
@@ -1462,15 +1446,9 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Hey! I found some great gift ideas for "${searchQuery}" using GiftFNDR:`;
                       
-                      // Direct WhatsApp sharing - works better on mobile
+                      // Direct WhatsApp sharing - simple approach
                       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-                      const link = document.createElement('a');
-                      link.href = whatsappUrl;
-                      link.target = '_blank';
-                      link.rel = 'noopener noreferrer';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      window.location.href = whatsappUrl;
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
@@ -1503,15 +1481,9 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Gift Recommendations for "${searchQuery}"\n\nI found these amazing gift ideas using GiftFNDR's AI recommendations:\n\n${shareUrl}`;
                       
-                      // Direct email sharing - works better on mobile
+                      // Direct email sharing - simple approach
                       const emailUrl = `mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`;
-                      const link = document.createElement('a');
-                      link.href = emailUrl;
-                      link.target = '_blank';
-                      link.rel = 'noopener noreferrer';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      window.location.href = emailUrl;
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
