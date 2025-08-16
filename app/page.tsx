@@ -1360,7 +1360,39 @@ export default function Home() {
               {/* Social Share Buttons - Mobile Optimized */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
-                  onClick={() => shareToSocial('twitter')}
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/share', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          query: searchQuery, 
+                          results: results 
+                        })
+                      });
+
+                      if (!response.ok) throw new Error('Failed to create share');
+                      
+                      const { shareUrl } = await response.json();
+                      const shareText = `🎁 Found perfect gifts for "${searchQuery}" with AI! Check out these recommendations:`;
+                      
+                      // Direct X (Twitter) sharing
+                      const xUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=gifts,AI,recommendations`;
+                      
+                      // Try to open in app first, then fallback to web
+                      const link = document.createElement('a');
+                      link.href = xUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      
+                      trackEvent.shareResults(searchQuery, results?.length || 0);
+                    } catch (error) {
+                      console.error('Share failed:', error);
+                    }
+                  }}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 active:bg-gray-900 transition-colors touch-manipulation min-h-[44px]"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -1371,7 +1403,39 @@ export default function Home() {
                 </button>
                 
                 <button
-                  onClick={() => shareToSocial('facebook')}
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/share', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          query: searchQuery, 
+                          results: results 
+                        })
+                      });
+
+                      if (!response.ok) throw new Error('Failed to create share');
+                      
+                      const { shareUrl } = await response.json();
+                      const shareText = `🎁 Just discovered amazing gift ideas for "${searchQuery}" using GiftFNDR's AI recommendations!`;
+                      
+                      // Direct Facebook sharing
+                      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+                      
+                      // Try to open in app first, then fallback to web
+                      const link = document.createElement('a');
+                      link.href = fbUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      
+                      trackEvent.shareResults(searchQuery, results?.length || 0);
+                    } catch (error) {
+                      console.error('Share failed:', error);
+                    }
+                  }}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#1877F2]/90 active:bg-[#1877F2]/80 transition-colors touch-manipulation min-h-[44px]"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -1398,24 +1462,15 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Hey! I found some great gift ideas for "${searchQuery}" using GiftFNDR:`;
                       
-                      // Try Web Share API first (mobile native sharing)
-                      if (navigator.share) {
-                        await navigator.share({
-                          title: 'GiftFNDR - AI Gift Recommendations',
-                          text: shareText,
-                          url: shareUrl,
-                        });
-                      } else {
-                        // Fallback to WhatsApp web
-                        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-                        const link = document.createElement('a');
-                        link.href = whatsappUrl;
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }
+                      // Direct WhatsApp sharing - works better on mobile
+                      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+                      const link = document.createElement('a');
+                      link.href = whatsappUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
@@ -1448,24 +1503,15 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Gift Recommendations for "${searchQuery}"\n\nI found these amazing gift ideas using GiftFNDR's AI recommendations:\n\n${shareUrl}`;
                       
-                      // Try Web Share API first (mobile native sharing)
-                      if (navigator.share) {
-                        await navigator.share({
-                          title: 'GiftFNDR - AI Gift Recommendations',
-                          text: shareText,
-                          url: shareUrl,
-                        });
-                      } else {
-                        // Fallback to email
-                        const emailUrl = `mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`;
-                        const link = document.createElement('a');
-                        link.href = emailUrl;
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }
+                      // Direct email sharing - works better on mobile
+                      const emailUrl = `mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`;
+                      const link = document.createElement('a');
+                      link.href = emailUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
