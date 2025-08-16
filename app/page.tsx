@@ -236,30 +236,45 @@ export default function Home() {
            }
          }, [searchQuery]);
 
-         // Enhanced share functionality
+         // Enhanced share functionality with short URLs
   const shareResults = async () => {
     if (!results || !results.length) return;
 
-    const shareData = {
-      query: searchQuery,
-      results: results.slice(0, 6), // Limit to 6 for better sharing
-      timestamp: Date.now()
-    };
-
-    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
-    const shareText = `🎁 I just found amazing gift ideas for "${searchQuery}" using GiftFNDR! Check out these AI-powered recommendations: ${shareUrl}`;
-
     try {
+      // Create short share URL
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: searchQuery, 
+          results: results 
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to create share');
+      
+      const { shareUrl } = await response.json();
+      
+      // Better share messages
+      const shareMessages = {
+        twitter: `🎁 Found perfect gifts for "${searchQuery}" with AI! Check out these recommendations:`,
+        facebook: `🎁 Just discovered amazing gift ideas for "${searchQuery}" using GiftFNDR's AI recommendations!`,
+        linkedin: `🎁 AI-powered gift recommendations for "${searchQuery}" - perfect for any occasion!`,
+        pinterest: `🎁 Gift inspiration for "${searchQuery}" - AI-curated recommendations`,
+        whatsapp: `🎁 Hey! I found some great gift ideas for "${searchQuery}" using GiftFNDR:`,
+        email: `🎁 Gift Recommendations for "${searchQuery}"`
+      };
+
       // Try native sharing first
       if (navigator.share) {
         await navigator.share({
           title: 'GiftFNDR - AI Gift Recommendations',
-          text: shareText,
+          text: shareMessages.twitter,
           url: shareUrl,
         });
       } else {
         // Fallback to clipboard
-        await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+        await navigator.clipboard.writeText(`${shareMessages.twitter}\n\n${shareUrl}`);
         setCopiedToClipboard(true);
         setTimeout(() => setCopiedToClipboard(false), 2000);
       }
@@ -271,37 +286,54 @@ export default function Home() {
     }
   };
 
-  // Social media specific sharing
-  const shareToSocial = (platform: 'twitter' | 'facebook' | 'linkedin' | 'pinterest') => {
+    // Social media specific sharing with short URLs
+  const shareToSocial = async (platform: 'twitter' | 'facebook' | 'linkedin' | 'pinterest') => {
     if (!results || !results.length) return;
 
-    const shareData = {
-      query: searchQuery,
-      results: results.slice(0, 6),
-      timestamp: Date.now()
-    };
+    try {
+      // Create short share URL
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: searchQuery, 
+          results: results 
+        })
+      });
 
-    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
-    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
-    
-    let url = '';
-         switch (platform) {
-       case 'twitter':
-         url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=gifts,AI,recommendations`;
-         break;
-      case 'facebook':
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
-        break;
-      case 'linkedin':
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-        break;
-      case 'pinterest':
-        url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(shareText)}`;
-        break;
+      if (!response.ok) throw new Error('Failed to create share');
+      
+      const { shareUrl } = await response.json();
+      
+      // Platform-specific messages
+      const shareMessages = {
+        twitter: `🎁 Found perfect gifts for "${searchQuery}" with AI! Check out these recommendations:`,
+        facebook: `🎁 Just discovered amazing gift ideas for "${searchQuery}" using GiftFNDR's AI recommendations!`,
+        linkedin: `🎁 AI-powered gift recommendations for "${searchQuery}" - perfect for any occasion!`,
+        pinterest: `🎁 Gift inspiration for "${searchQuery}" - AI-curated recommendations`
+      };
+      
+      let url = '';
+      switch (platform) {
+        case 'twitter':
+          url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareMessages.twitter)}&url=${encodeURIComponent(shareUrl)}&hashtags=gifts,AI,recommendations`;
+          break;
+        case 'facebook':
+          url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareMessages.facebook)}`;
+          break;
+        case 'linkedin':
+          url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+          break;
+        case 'pinterest':
+          url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(shareMessages.pinterest)}`;
+          break;
+      }
+      
+      window.open(url, '_blank', 'width=600,height=400');
+      trackEvent.shareResults(searchQuery, results.length);
+    } catch (error) {
+      console.error('Share failed:', error);
     }
-    
-    window.open(url, '_blank', 'width=600,height=400');
-    trackEvent.shareResults(searchQuery, results.length);
   };
 
   // Share functionality
@@ -318,19 +350,28 @@ export default function Home() {
     });
   }
 
-  function handleShareResults() {
+  async function handleShareResults() {
     if (!results || !searchQuery.trim()) return;
     
-    const data: ShareData = {
-      query: searchQuery,
-      results: results,
-      timestamp: Date.now()
-    };
-    
-    const url = generateShareUrl(data);
-    setShareUrl(url);
-    setShareData(data);
-    setShowShareModal(true);
+    try {
+      // Create short share URL
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: searchQuery, 
+          results: results 
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to create share');
+      
+      const { shareUrl } = await response.json();
+      setShareUrl(shareUrl);
+      setShowShareModal(true);
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   }
 
   // Smart Search Helper Functions
@@ -369,27 +410,55 @@ export default function Home() {
     const shareParam = urlParams.get('share');
     
     if (shareParam) {
-      try {
-        const decodedData = JSON.parse(atob(shareParam));
-        const data: ShareData = decodedData;
-        
-        // Check if data is not too old (7 days)
-        const isExpired = Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000;
-        
-        if (!isExpired) {
-          setSearchQuery(data.query);
-          setResults(data.results);
-          setAllResults(data.results);
-          setDisplayedCount(data.results.length);
-          setSortBy('default');
-          setSelectedCategory('all');
-          setResultsSearchQuery('');
+      // Check if it's a short ID (6 characters) or old encoded data
+      if (shareParam.length === 6) {
+        // New short share ID - fetch from API
+        fetch(`/api/share/${shareParam}`)
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error('Share not found');
+          })
+          .then(data => {
+            setSearchQuery(data.query);
+            setResults(data.results);
+            setAllResults(data.results);
+            setDisplayedCount(data.results.length);
+            setSortBy('default');
+            setSelectedCategory('all');
+            setResultsSearchQuery('');
+            
+            // Clear the URL parameter
+            window.history.replaceState({}, document.title, window.location.pathname);
+          })
+          .catch(error => {
+            console.error('Failed to load shared results:', error);
+          });
+      } else {
+        // Old encoded data format - try to decode
+        try {
+          const decodedData = JSON.parse(atob(shareParam));
+          const data: ShareData = decodedData;
           
-          // Clear the URL parameter
-          window.history.replaceState({}, document.title, window.location.pathname);
+          // Check if data is not too old (7 days)
+          const isExpired = Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000;
+          
+          if (!isExpired) {
+            setSearchQuery(data.query);
+            setResults(data.results);
+            setAllResults(data.results);
+            setDisplayedCount(data.results.length);
+            setSortBy('default');
+            setSelectedCategory('all');
+            setResultsSearchQuery('');
+            
+            // Clear the URL parameter
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (error) {
+          console.error('Failed to load shared results:', error);
         }
-      } catch (error) {
-        console.error('Failed to load shared results:', error);
       }
     }
   }, []);
@@ -1255,16 +1324,26 @@ export default function Home() {
                 </button>
                 
                 <button
-                  onClick={() => {
-                    const shareData = {
-                      query: searchQuery,
-                      results: results?.slice(0, 6) || [],
-                      timestamp: Date.now()
-                    };
-                    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
-                    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
-                    trackEvent.shareResults(searchQuery, results?.length || 0);
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/share', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          query: searchQuery, 
+                          results: results 
+                        })
+                      });
+
+                      if (!response.ok) throw new Error('Failed to create share');
+                      
+                      const { shareUrl } = await response.json();
+                      const shareText = `🎁 Hey! I found some great gift ideas for "${searchQuery}" using GiftFNDR:`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+                      trackEvent.shareResults(searchQuery, results?.length || 0);
+                    } catch (error) {
+                      console.error('Share failed:', error);
+                    }
                   }}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#25D366]/90 transition-colors"
                 >
@@ -1275,16 +1354,26 @@ export default function Home() {
                 </button>
                 
                 <button
-                  onClick={() => {
-                    const shareData = {
-                      query: searchQuery,
-                      results: results?.slice(0, 6) || [],
-                      timestamp: Date.now()
-                    };
-                    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
-                    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
-                    window.open(`mailto:?subject=${encodeURIComponent('Amazing Gift Ideas from GiftFNDR')}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`, '_blank');
-                    trackEvent.shareResults(searchQuery, results?.length || 0);
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/share', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          query: searchQuery, 
+                          results: results 
+                        })
+                      });
+
+                      if (!response.ok) throw new Error('Failed to create share');
+                      
+                      const { shareUrl } = await response.json();
+                      const shareText = `🎁 Gift Recommendations for "${searchQuery}"\n\nI found these amazing gift ideas using GiftFNDR's AI recommendations:\n\n${shareUrl}`;
+                      window.open(`mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`, '_blank');
+                      trackEvent.shareResults(searchQuery, results?.length || 0);
+                    } catch (error) {
+                      console.error('Share failed:', error);
+                    }
                   }}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
