@@ -88,6 +88,12 @@ export default function Home() {
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   
+  // Smart Search States
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [peopleAlsoSearched, setPeopleAlsoSearched] = useState<string[]>([]);
+  
   // Ref for scrolling to loading area
   const loadingRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +115,26 @@ export default function Home() {
     { text: "Gaming", query: "gaming" },
     { text: "Fitness", query: "fitness" },
     { text: "Books", query: "books" }
+  ];
+
+  // Smart Search Suggestions Database
+  const searchSuggestionsDB = [
+    "tech gifts", "gaming", "coffee", "fitness", "books", "romantic", "anniversary", "birthday",
+    "christmas", "valentine", "mother", "father", "sister", "brother", "friend", "colleague",
+    "boss", "teacher", "student", "gardener", "cook", "artist", "musician", "photographer",
+    "traveler", "hiker", "yoga", "meditation", "cooking", "baking", "wine", "beer", "tea",
+    "jewelry", "watches", "bags", "shoes", "clothing", "accessories", "home decor", "kitchen",
+    "bathroom", "bedroom", "living room", "garden", "outdoor", "indoor", "pet", "dog", "cat",
+    "baby", "toddler", "teenager", "adult", "senior", "luxury", "budget", "affordable", "premium"
+  ];
+
+  // People Also Searched For (based on common patterns)
+  const peopleAlsoSearchedDB = [
+    "tech gifts for dad", "romantic gifts for wife", "coffee gifts for mom", "gaming gifts for brother",
+    "fitness gifts for boyfriend", "book gifts for sister", "anniversary gifts for husband",
+    "birthday gifts for friend", "christmas gifts for family", "valentine gifts for girlfriend",
+    "mother's day gifts", "father's day gifts", "teacher appreciation gifts", "boss gifts",
+    "housewarming gifts", "wedding gifts", "baby shower gifts", "graduation gifts"
   ];
 
   // Typewriter animation
@@ -159,6 +185,55 @@ export default function Home() {
            return () => clearTimeout(timer);
          }, [searchQuery]);
 
+         // Smart Search Logic
+         useEffect(() => {
+           if (debouncedSearchQuery.trim()) {
+             // Generate search suggestions
+             const suggestions = searchSuggestionsDB
+               .filter(suggestion => 
+                 suggestion.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) &&
+                 suggestion.toLowerCase() !== debouncedSearchQuery.toLowerCase()
+               )
+               .slice(0, 8);
+             setSearchSuggestions(suggestions);
+             setShowSuggestions(true);
+           } else {
+             // Show popular suggestions when search is empty
+             setSearchSuggestions(searchSuggestionsDB.slice(0, 8));
+             setShowSuggestions(true);
+           }
+         }, [debouncedSearchQuery]);
+
+         // Load recent searches from localStorage and initialize suggestions
+         useEffect(() => {
+           const saved = localStorage.getItem('giftfindr_recent_searches');
+           if (saved) {
+             try {
+               setRecentSearches(JSON.parse(saved));
+             } catch (error) {
+               console.error('Failed to load recent searches:', error);
+             }
+           }
+           
+           // Initialize with popular suggestions
+           setSearchSuggestions(searchSuggestionsDB.slice(0, 8));
+         }, []);
+
+         // Generate "People Also Searched For" suggestions
+         useEffect(() => {
+           if (searchQuery.trim()) {
+             const related = peopleAlsoSearchedDB
+               .filter(item => 
+                 item.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                 searchQuery.toLowerCase().includes(item.toLowerCase())
+               )
+               .slice(0, 3);
+             setPeopleAlsoSearched(related);
+           } else {
+             setPeopleAlsoSearched([]);
+           }
+         }, [searchQuery]);
+
          // Share functionality
          function generateShareUrl(data: ShareData): string {
            const baseUrl = window.location.origin;
@@ -202,6 +277,33 @@ export default function Home() {
            setShareData(data);
            setShowShareModal(true);
          }
+
+         // Smart Search Helper Functions
+         const addToRecentSearches = (query: string) => {
+           if (!query.trim()) return;
+           
+           const updated = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+           setRecentSearches(updated);
+           localStorage.setItem('giftfindr_recent_searches', JSON.stringify(updated));
+         };
+
+         const handleSuggestionClick = (suggestion: string) => {
+           setSearchQuery(suggestion);
+           setShowSuggestions(false);
+           addToRecentSearches(suggestion);
+         };
+
+         const handleRecentSearchClick = (recentQuery: string) => {
+           setSearchQuery(recentQuery);
+           setShowSuggestions(false);
+           // Move to top of recent searches
+           addToRecentSearches(recentQuery);
+         };
+
+         const clearRecentSearches = () => {
+           setRecentSearches([]);
+           localStorage.removeItem('giftfindr_recent_searches');
+         };
 
          // Load shared results from URL
          useEffect(() => {
@@ -299,6 +401,8 @@ export default function Home() {
       setSortBy('default');
       setSelectedCategory('all');
       setResultsSearchQuery('');
+      addToRecentSearches(searchQuery);
+      setShowSuggestions(false);
       return;
     }
     
@@ -310,6 +414,10 @@ export default function Home() {
     setSortBy('default');
     setSelectedCategory('all');
     setResultsSearchQuery('');
+    
+    // Add to recent searches
+    addToRecentSearches(searchQuery);
+    setShowSuggestions(false);
     
     // Scroll to loading area
     setTimeout(() => {
@@ -559,9 +667,100 @@ export default function Home() {
               </div>
             </div>
             <p className="mt-4 text-center text-sm text-muted/80">
-              Or explore categories and occasions below
+              💡 Start typing for smart suggestions • Or explore categories and occasions below
             </p>
           </form>
+
+          {/* Smart Search Suggestions - Naturally positioned */}
+          {showSuggestions && (
+            <div className="mt-4 bg-background border border-border/50 rounded-2xl shadow-lg max-h-96 overflow-hidden">
+              {/* Search Suggestions */}
+              {searchSuggestions.length > 0 && (
+                <div className="p-4 border-b border-border/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <span className="text-sm font-medium text-foreground">Popular Suggestions</span>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
+                    <div className="space-y-2 pr-2">
+                      {searchSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors duration-200 text-sm text-foreground/80 hover:text-foreground"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Searches */}
+              {recentSearches.length > 0 && (
+                <div className="p-4 border-b border-border/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium text-foreground">Recent Searches</span>
+                    </div>
+                    <button
+                      onClick={clearRecentSearches}
+                      className="text-xs text-muted hover:text-foreground transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
+                    <div className="space-y-2 pr-2">
+                      {recentSearches.map((recentQuery, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleRecentSearchClick(recentQuery)}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors duration-200 text-sm text-foreground/80 hover:text-foreground flex items-center gap-2"
+                        >
+                          <svg className="w-3 h-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {recentQuery}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* People Also Searched For */}
+              {peopleAlsoSearched.length > 0 && (
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-foreground">People Also Searched For</span>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
+                    <div className="space-y-2 pr-2">
+                      {peopleAlsoSearched.map((relatedQuery, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(relatedQuery)}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors duration-200 text-sm text-foreground/80 hover:text-foreground"
+                        >
+                          {relatedQuery}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick Search Options */}
           <div className="mt-8 popular-searches-container">
