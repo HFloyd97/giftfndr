@@ -175,7 +175,7 @@ export default function GiftGuidesPage() {
               <h3 className="text-xl font-semibold mb-4 text-foreground">Budget-Friendly Options</h3>
               <p className="text-muted/80 leading-relaxed">
                 From affordable finds to luxury items, our guides include options for every budget. We believe 
-                that thoughtful gifts don't have to break the bank.
+                that thoughtful gifts don&apos;t have to break the bank.
               </p>
             </div>
             
@@ -183,7 +183,7 @@ export default function GiftGuidesPage() {
               <div className="text-4xl mb-4">🤖</div>
               <h3 className="text-xl font-semibold mb-4 text-foreground">AI-Powered Personalization</h3>
               <p className="text-muted/80 leading-relaxed">
-                Our AI-powered gift finder takes into account the recipient's interests, hobbies, and preferences 
+                Our AI-powered gift finder takes into account the recipient&apos;s interests, hobbies, and preferences 
                 to suggest truly personalized gifts.
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function GiftGuidesPage() {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <h2 className="text-3xl font-bold mb-4">Can't Find What You're Looking For?</h2>
+                      <h2 className="text-3xl font-bold mb-4">Can&apos;t Find What You&apos;re Looking For?</h2>
           <p className="text-muted mb-8">
             Use our AI-powered gift finder to get personalized recommendations for any occasion.
           </p>

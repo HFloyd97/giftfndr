@@ -68,7 +68,7 @@ export default function AboutPage() {
                 the giver and the recipient.
               </p>
               <p className="text-lg text-muted/80">
-                Whether you're shopping for a birthday, anniversary, holiday, or just because, 
+                Whether you&apos;re shopping for a birthday, anniversary, holiday, or just because, 
                 GiftFNDR helps you find thoughtful, meaningful gifts that strengthen relationships 
                 and create lasting memories.
               </p>
@@ -94,7 +94,7 @@ export default function AboutPage() {
               <h3 className="text-xl font-semibold mb-3">AI-Powered Intelligence</h3>
               <p className="text-muted/80">
                 Our advanced AI analyzes multiple factors to provide truly personalized 
-                gift recommendations that match the recipient's personality and interests.
+                gift recommendations that match the recipient&apos;s personality and interests.
               </p>
             </div>
             <div className="text-center">
@@ -195,7 +195,7 @@ export default function AboutPage() {
                   <h3 className="text-xl font-semibold text-foreground">AI-Powered Intelligence</h3>
                 </div>
                 <p className="text-muted/80 leading-relaxed">
-                  Our platform analyzes various factors including the recipient's interests, personality traits, 
+                  Our platform analyzes various factors including the recipient&apos;s interests, personality traits, 
                   the relationship between giver and recipient, the occasion, and budget constraints.
                 </p>
               </div>
@@ -231,7 +231,7 @@ export default function AboutPage() {
                   <h3 className="text-xl font-semibold text-foreground">Continuous Improvement</h3>
                 </div>
                 <p className="text-muted/80 leading-relaxed">
-                  We're constantly learning from user feedback and gift-giving outcomes to improve 
+                  We&apos;re constantly learning from user feedback and gift-giving outcomes to improve 
                   our recommendations. Our AI gets smarter with every interaction.
                 </p>
               </div>

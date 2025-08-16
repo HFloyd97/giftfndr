@@ -188,7 +188,7 @@ export default function BlogPage() {
           
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             <div className="bg-secondary/30 rounded-2xl p-8 border border-border/30">
-              <h3 className="text-xl font-semibold mb-6 text-foreground">What You'll Find Here</h3>
+              <h3 className="text-xl font-semibold mb-6 text-foreground">What You&apos;ll Find Here</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="text-primary text-lg">💡</div>
