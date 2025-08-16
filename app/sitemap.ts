@@ -15,6 +15,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: 'https://giftfindr.vercel.app/gift-guides',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: 'https://giftfindr.vercel.app/blog',
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
       url: 'https://giftfindr.vercel.app/privacy',
       lastModified: new Date(),
       changeFrequency: 'yearly',

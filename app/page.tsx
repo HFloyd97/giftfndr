@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NewsletterSignup } from './components/NewsletterSignup';
 import { trackEvent } from './utils/analytics';
@@ -782,6 +783,21 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Navigation Links */}
+            <nav className="hidden md:flex items-center gap-6 mr-6">
+              <Link href="/" className="text-sm text-muted hover:text-foreground transition-colors">
+                Home
+              </Link>
+              <Link href="/gift-guides" className="text-sm text-muted hover:text-foreground transition-colors">
+                Gift Guides
+              </Link>
+              <Link href="/blog" className="text-sm text-muted hover:text-foreground transition-colors">
+                Blog
+              </Link>
+              <Link href="/about" className="text-sm text-muted hover:text-foreground transition-colors">
+                About
+              </Link>
+            </nav>
             <ThemeToggle />
           </div>
         </div>
