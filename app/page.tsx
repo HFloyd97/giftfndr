@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { ThemeToggle } from './components/ThemeToggle';
 
@@ -87,6 +87,9 @@ export default function Home() {
   const [shareUrl, setShareUrl] = useState('');
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+  
+  // Ref for scrolling to loading area
+  const loadingRef = useRef<HTMLDivElement>(null);
 
          // Animated placeholder examples
   const placeholderExamples = [
@@ -308,6 +311,11 @@ export default function Home() {
     setSelectedCategory('all');
     setResultsSearchQuery('');
     
+    // Scroll to loading area
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    
     try {
       const res = await fetch('/api/suggest', {
         method: 'POST',
@@ -360,6 +368,11 @@ export default function Home() {
     setSelectedCategory('all');
     setSearchQuery('');
     setResultsSearchQuery('');
+    
+    // Scroll to loading area
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
     
     try {
       const res = await fetch('/api/suggest', {
@@ -442,6 +455,11 @@ export default function Home() {
     setSortBy('default');
     setSelectedCategory('all');
     setResultsSearchQuery('');
+    
+    // Scroll to loading area
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
     
     try {
       const res = await fetch('/api/suggest', {
@@ -675,7 +693,7 @@ export default function Home() {
 
         {/* Loading Overlay */}
         {loading && !results && (
-          <div className="mt-10 flex flex-col items-center justify-center py-16">
+          <div ref={loadingRef} className="mt-10 flex flex-col items-center justify-center py-16">
             <div className="mb-6">
               <div className="w-16 h-16 border-4 border-border border-t-primary rounded-full animate-spin"></div>
             </div>
