@@ -329,7 +329,14 @@ export default function Home() {
           break;
       }
       
-      window.open(url, '_blank', 'width=600,height=400');
+      // Mobile-friendly link opening
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       trackEvent.shareResults(searchQuery, results.length);
     } catch (error) {
       console.error('Share failed:', error);
@@ -783,7 +790,7 @@ export default function Home() {
         <div className="mb-12">
           <form onSubmit={handleQuickSearch} className="relative">
             <div className="relative">
-              <input
+            <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1007,7 +1014,7 @@ export default function Home() {
           <div className="max-w-md mx-auto mb-8">
             <label className="block text-sm font-medium text-foreground mb-4 text-center">
               Budget: £{budget}
-            </label>
+          </label>
             <input
               type="range"
               min="10"
@@ -1147,8 +1154,8 @@ export default function Home() {
                     
                     {/* Actual Image with Loading States */}
                     <Image
-                      src={item.image}
-                      alt={item.title}
+                  src={item.image}
+                  alt={item.title}
                       width={640}
                       height={480}
                       className="h-48 w-full object-cover transition-all duration-600 ease-out group-hover:scale-105 group-hover:brightness-105 relative z-10"
@@ -1162,7 +1169,7 @@ export default function Home() {
                           setTimeout(() => skeleton.style.display = 'none', 300);
                         }
                       }}
-                      onError={(e) => {
+                  onError={(e) => {
                         // Enhanced fallback with loading state
                         const target = e.target as HTMLImageElement;
                         target.style.opacity = '0';
@@ -1183,7 +1190,7 @@ export default function Home() {
                      <div className="absolute top-3 right-3 z-30">
                        <span className="text-xs rounded-full bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 font-semibold shadow-sm border border-border/40 transition-all duration-400 ease-out group-hover:scale-105 group-hover:bg-primary/15 group-hover:text-primary">
                          £{item.estimatedPrice}
-                       </span>
+                    </span>
                      </div>
                      
 
@@ -1197,15 +1204,15 @@ export default function Home() {
                         <div className="ml-3 flex-shrink-0 transition-all duration-400 ease-out group-hover:scale-105">
                           <CategoryBadge category={item.category} />
                         </div>
-                      )}
-                    </div>
+                  )}
+                </div>
                     <p className="text-sm text-muted/70 mb-4 line-clamp-2 transition-all duration-400 ease-out group-hover:text-muted">{item.reason}</p>
                     
                     {/* Clean CTA Button */}
-                                         <a
-                       href={item.affiliateUrl}
-                       target="_blank"
-                       rel="noopener noreferrer"
+                <a
+                  href={item.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                        onClick={() => trackEvent.giftClick(item.title, item.category || 'general', item.estimatedPrice)}
                        className="inline-flex items-center justify-center w-full rounded-lg bg-foreground/5 hover:bg-primary/10 active:bg-primary/20 text-foreground/80 hover:text-primary active:text-primary border border-border/40 hover:border-primary/40 active:border-primary/60 px-4 py-3 font-medium transition-all duration-200 ease-out text-sm hover:scale-[1.01] active:scale-[0.98] touch-manipulation"
                      >
@@ -1305,6 +1312,51 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Mobile Native Share Button */}
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/share', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        query: searchQuery, 
+                        results: results 
+                      })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to create share');
+                    
+                    const { shareUrl } = await response.json();
+                    const shareText = `🎁 Found perfect gifts for "${searchQuery}" with AI! Check out these recommendations:`;
+                    
+                    // Use native Web Share API
+                    if (navigator.share) {
+                      await navigator.share({
+                        title: 'GiftFNDR - AI Gift Recommendations',
+                        text: shareText,
+                        url: shareUrl,
+                      });
+                    } else {
+                      // Fallback to clipboard
+                      await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+                      setCopiedToClipboard(true);
+                      setTimeout(() => setCopiedToClipboard(false), 2000);
+                    }
+                    
+                    trackEvent.shareResults(searchQuery, results?.length || 0);
+                  } catch (error) {
+                    console.error('Share failed:', error);
+                  }
+                }}
+                className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors touch-manipulation min-h-[44px] mb-3"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                </svg>
+                <span>Share Results</span>
+              </button>
+
               {/* Social Share Buttons - Mobile Optimized */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
@@ -1346,9 +1398,24 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Hey! I found some great gift ideas for "${searchQuery}" using GiftFNDR:`;
                       
-                      // Mobile-optimized WhatsApp sharing
-                      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-                      window.open(whatsappUrl, '_blank');
+                      // Try Web Share API first (mobile native sharing)
+                      if (navigator.share) {
+                        await navigator.share({
+                          title: 'GiftFNDR - AI Gift Recommendations',
+                          text: shareText,
+                          url: shareUrl,
+                        });
+                      } else {
+                        // Fallback to WhatsApp web
+                        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+                        const link = document.createElement('a');
+                        link.href = whatsappUrl;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
@@ -1381,9 +1448,24 @@ export default function Home() {
                       const { shareUrl } = await response.json();
                       const shareText = `🎁 Gift Recommendations for "${searchQuery}"\n\nI found these amazing gift ideas using GiftFNDR's AI recommendations:\n\n${shareUrl}`;
                       
-                      // Mobile-optimized email sharing
-                      const emailUrl = `mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`;
-                      window.open(emailUrl, '_blank');
+                      // Try Web Share API first (mobile native sharing)
+                      if (navigator.share) {
+                        await navigator.share({
+                          title: 'GiftFNDR - AI Gift Recommendations',
+                          text: shareText,
+                          url: shareUrl,
+                        });
+                      } else {
+                        // Fallback to email
+                        const emailUrl = `mailto:?subject=${encodeURIComponent('Gift Recommendations from GiftFNDR')}&body=${encodeURIComponent(shareText)}`;
+                        const link = document.createElement('a');
+                        link.href = emailUrl;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
                       
                       trackEvent.shareResults(searchQuery, results?.length || 0);
                     } catch (error) {
