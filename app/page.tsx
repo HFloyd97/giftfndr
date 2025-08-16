@@ -91,7 +91,7 @@ export default function Home() {
          // Animated placeholder examples
   const placeholderExamples = [
     "Gift for my tech-savvy brother who loves gaming",
-    "Something romantic for my wife's anniversary",
+    "Something romantic for my wife&apos;s anniversary",
     "Fun gift for a coffee-loving friend",
     "Educational toy for my 8-year-old niece",
     "Luxury gift for my boss under £100",
@@ -696,7 +696,7 @@ export default function Home() {
                   Found {results.length} perfect gifts
                 </h2>
                 <p className="text-muted mt-1">
-                  for "{searchQuery}" • Budget: £{budget}
+                  for &quot;{searchQuery}&quot; • Budget: £{budget}
                 </p>
               </div>
               <button
