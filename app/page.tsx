@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { ThemeToggle } from './components/ThemeToggle';
+import { NewsletterSignup } from './components/NewsletterSignup';
 import { trackEvent } from './utils/analytics';
 
 type Suggestion = {
@@ -235,163 +236,216 @@ export default function Home() {
            }
          }, [searchQuery]);
 
-         // Share functionality
-         function generateShareUrl(data: ShareData): string {
-           const baseUrl = window.location.origin;
-           const encodedData = btoa(JSON.stringify(data));
-           return `${baseUrl}?share=${encodedData}`;
-         }
+         // Enhanced share functionality
+  const shareResults = async () => {
+    if (!results || !results.length) return;
 
-         function copyToClipboard(text: string) {
-           navigator.clipboard.writeText(text).then(() => {
-             setCopiedToClipboard(true);
-             setTimeout(() => setCopiedToClipboard(false), 2000);
-           });
-         }
+    const shareData = {
+      query: searchQuery,
+      results: results.slice(0, 6), // Limit to 6 for better sharing
+      timestamp: Date.now()
+    };
 
-         function shareToSocial(platform: string) {
-           const text = `Check out these amazing gift ideas I found on GiftFNDR! 🎁`;
-           const url = shareUrl;
-           
-           const shareUrls = {
-             twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-             facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-             linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-             whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`,
-             email: `mailto:?subject=${encodeURIComponent('Amazing Gift Ideas from GiftFNDR')}&body=${encodeURIComponent(text + '\n\n' + url)}`
-           };
-           
-           window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
-         }
+    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
+    const shareText = `🎁 I just found amazing gift ideas for "${searchQuery}" using GiftFNDR! Check out these AI-powered recommendations: ${shareUrl}`;
 
-         function handleShareResults() {
-           if (!results || !searchQuery.trim()) return;
-           
-           const data: ShareData = {
-             query: searchQuery,
-             results: results,
-             timestamp: Date.now()
-           };
-           
-           const url = generateShareUrl(data);
-           setShareUrl(url);
-           setShareData(data);
-           setShowShareModal(true);
-         }
+    try {
+      // Try native sharing first
+      if (navigator.share) {
+        await navigator.share({
+          title: 'GiftFNDR - AI Gift Recommendations',
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+        setCopiedToClipboard(true);
+        setTimeout(() => setCopiedToClipboard(false), 2000);
+      }
 
-         // Smart Search Helper Functions
-         const addToRecentSearches = (query: string) => {
-           if (!query.trim()) return;
-           
-           const updated = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
-           setRecentSearches(updated);
-           localStorage.setItem('giftfindr_recent_searches', JSON.stringify(updated));
-         };
+      // Track share event
+      trackEvent.shareResults(searchQuery, results.length);
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
+  };
 
-         const handleSuggestionClick = (suggestion: string) => {
-           // Track suggestion click
-           trackEvent.search(suggestion, 'suggestion');
-           
-           setSearchQuery(suggestion);
-           setShowSuggestions(false);
-           addToRecentSearches(suggestion);
-         };
+  // Social media specific sharing
+  const shareToSocial = (platform: 'twitter' | 'facebook' | 'linkedin' | 'pinterest') => {
+    if (!results || !results.length) return;
 
-         const handleRecentSearchClick = (recentQuery: string) => {
-           setSearchQuery(recentQuery);
-           setShowSuggestions(false);
-           // Move to top of recent searches
-           addToRecentSearches(recentQuery);
-         };
+    const shareData = {
+      query: searchQuery,
+      results: results.slice(0, 6),
+      timestamp: Date.now()
+    };
 
-         const clearRecentSearches = () => {
-           setRecentSearches([]);
-           localStorage.removeItem('giftfindr_recent_searches');
-         };
+    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
+    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
+    
+    let url = '';
+         switch (platform) {
+       case 'twitter':
+         url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=gifts,AI,recommendations`;
+         break;
+      case 'facebook':
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+        break;
+      case 'linkedin':
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+        break;
+      case 'pinterest':
+        url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(shareText)}`;
+        break;
+    }
+    
+    window.open(url, '_blank', 'width=600,height=400');
+    trackEvent.shareResults(searchQuery, results.length);
+  };
 
-         // Load shared results from URL
-         useEffect(() => {
-           const urlParams = new URLSearchParams(window.location.search);
-           const shareParam = urlParams.get('share');
-           
-           if (shareParam) {
-             try {
-               const decodedData = JSON.parse(atob(shareParam));
-               const data: ShareData = decodedData;
-               
-               // Check if data is not too old (7 days)
-               const isExpired = Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000;
-               
-               if (!isExpired) {
-                 setSearchQuery(data.query);
-                 setResults(data.results);
-                 setAllResults(data.results);
-                 setDisplayedCount(data.results.length);
-                 setSortBy('default');
-                 setSelectedCategory('all');
-                 setResultsSearchQuery('');
-                 
-                 // Clear the URL parameter
-                 window.history.replaceState({}, document.title, window.location.pathname);
-               }
-             } catch (error) {
-               console.error('Failed to load shared results:', error);
-             }
-           }
-         }, []);
+  // Share functionality
+  function generateShareUrl(data: ShareData): string {
+    const baseUrl = window.location.origin;
+    const encodedData = btoa(JSON.stringify(data));
+    return `${baseUrl}?share=${encodedData}`;
+  }
 
-         async function handleSearchButtonClick() {
-           if (!searchQuery.trim()) return;
-           
-           const cacheKey = `quick_${searchQuery.toLowerCase()}`;
-           
-           // Check cache first
-           if (searchCache[cacheKey]) {
-             setResults(searchCache[cacheKey]);
-             setAllResults(searchCache[cacheKey]);
-             setDisplayedCount(9);
-             setSortBy('default');
-             setSelectedCategory('all');
-             setResultsSearchQuery('');
-             return;
-           }
-           
-           setLoading(true);
-           setError(null);
-           setResults(null);
-           setAllResults([]);
-           setDisplayedCount(9);
-           setSortBy('default');
-           setSelectedCategory('all');
-           setResultsSearchQuery('');
-           
-           try {
-             const res = await fetch('/api/suggest', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ 
-                 occasion: '', 
-                 relationship: '', 
-                 interests: searchQuery, 
-                 budget: 100 
-               })
-             });
-             if (!res.ok) throw new Error('Request failed');
-             const data = await res.json();
-             
-             // Cache the results
-             setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
-             
-             setAllResults(data.results);
-             setResults(data.results.slice(0, 9));
-           } catch {
-             setError('Something went wrong. Please try again.');
-           } finally {
-             setLoading(false);
-           }
-         }
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedToClipboard(true);
+      setTimeout(() => setCopiedToClipboard(false), 2000);
+    });
+  }
 
-         async function handleQuickSearch(e: React.FormEvent) {
+  function handleShareResults() {
+    if (!results || !searchQuery.trim()) return;
+    
+    const data: ShareData = {
+      query: searchQuery,
+      results: results,
+      timestamp: Date.now()
+    };
+    
+    const url = generateShareUrl(data);
+    setShareUrl(url);
+    setShareData(data);
+    setShowShareModal(true);
+  }
+
+  // Smart Search Helper Functions
+  const addToRecentSearches = (query: string) => {
+    if (!query.trim()) return;
+    
+    const updated = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem('giftfindr_recent_searches', JSON.stringify(updated));
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    // Track suggestion click
+    trackEvent.search(suggestion, 'suggestion');
+    
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    addToRecentSearches(suggestion);
+  };
+
+  const handleRecentSearchClick = (recentQuery: string) => {
+    setSearchQuery(recentQuery);
+    setShowSuggestions(false);
+    // Move to top of recent searches
+    addToRecentSearches(recentQuery);
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('giftfindr_recent_searches');
+  };
+
+  // Load shared results from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareParam = urlParams.get('share');
+    
+    if (shareParam) {
+      try {
+        const decodedData = JSON.parse(atob(shareParam));
+        const data: ShareData = decodedData;
+        
+        // Check if data is not too old (7 days)
+        const isExpired = Date.now() - data.timestamp > 7 * 24 * 60 * 60 * 1000;
+        
+        if (!isExpired) {
+          setSearchQuery(data.query);
+          setResults(data.results);
+          setAllResults(data.results);
+          setDisplayedCount(data.results.length);
+          setSortBy('default');
+          setSelectedCategory('all');
+          setResultsSearchQuery('');
+          
+          // Clear the URL parameter
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } catch (error) {
+        console.error('Failed to load shared results:', error);
+      }
+    }
+  }, []);
+
+  async function handleSearchButtonClick() {
+    if (!searchQuery.trim()) return;
+    
+    const cacheKey = `quick_${searchQuery.toLowerCase()}`;
+    
+    // Check cache first
+    if (searchCache[cacheKey]) {
+      setResults(searchCache[cacheKey]);
+      setAllResults(searchCache[cacheKey]);
+      setDisplayedCount(9);
+      setSortBy('default');
+      setSelectedCategory('all');
+      setResultsSearchQuery('');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    setResults(null);
+    setAllResults([]);
+    setDisplayedCount(9);
+    setSortBy('default');
+    setSelectedCategory('all');
+    setResultsSearchQuery('');
+    
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          occasion: '', 
+          relationship: '', 
+          interests: searchQuery, 
+          budget: 100 
+        })
+      });
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      
+      // Cache the results
+      setSearchCache(prev => ({ ...prev, [cacheKey]: data.results }));
+      
+      setAllResults(data.results);
+      setResults(data.results.slice(0, 9));
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
@@ -1182,12 +1236,12 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
                   onClick={() => shareToSocial('twitter')}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white rounded-lg hover:bg-[#1DA1F2]/90 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
-                  Twitter
+                  X
                 </button>
                 
                 <button
@@ -1201,7 +1255,17 @@ export default function Home() {
                 </button>
                 
                 <button
-                  onClick={() => shareToSocial('whatsapp')}
+                  onClick={() => {
+                    const shareData = {
+                      query: searchQuery,
+                      results: results?.slice(0, 6) || [],
+                      timestamp: Date.now()
+                    };
+                    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
+                    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+                    trackEvent.shareResults(searchQuery, results?.length || 0);
+                  }}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#25D366]/90 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -1211,7 +1275,17 @@ export default function Home() {
                 </button>
                 
                 <button
-                  onClick={() => shareToSocial('email')}
+                  onClick={() => {
+                    const shareData = {
+                      query: searchQuery,
+                      results: results?.slice(0, 6) || [],
+                      timestamp: Date.now()
+                    };
+                    const shareUrl = `${window.location.origin}/?share=${btoa(JSON.stringify(shareData))}`;
+                    const shareText = `🎁 Amazing gift ideas for "${searchQuery}" - AI-powered recommendations!`;
+                    window.open(`mailto:?subject=${encodeURIComponent('Amazing Gift Ideas from GiftFNDR')}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`, '_blank');
+                    trackEvent.shareResults(searchQuery, results?.length || 0);
+                  }}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg hover:bg-secondary/80 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1229,6 +1303,11 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* Newsletter Signup */}
+        <div className="mt-16">
+          <NewsletterSignup />
+        </div>
 
         <p className="mt-12 text-xs text-muted">
           As an Amazon Associate, we earn from qualifying purchases.

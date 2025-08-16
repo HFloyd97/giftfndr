@@ -32,8 +32,17 @@ export const trackEvent = {
     track('load_more', { currentCount, newCount });
   },
 
-  // Error tracking
-  error: (error: string, context: string) => {
-    track('error', { error, context });
-  }
+           // Error tracking
+         error: (error: string, context: string) => {
+           track('error', { error, context });
+         },
+
+         // Newsletter tracking
+         newsletterSignup: (email: string) => {
+           track('newsletter_signup', { email: email.substring(0, 3) + '***' });
+         },
+
+         newsletterSignupSuccess: (email: string) => {
+           track('newsletter_signup_success', { email: email.substring(0, 3) + '***' });
+         }
 };
